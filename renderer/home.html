@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>PvP.net Client</title>
+
+    <style>
+        @font-face {
+            font-family: "FRQITC01";
+            src: url("assets/fonts/FRQITC01.ttf") format("truetype");
+        }
+         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100vh;
+            background: #010610;
+            color: #cdbe91;
+            font-family: Tahoma, Arial, sans-serif;
+            overflow: hidden;
+            font-size: 12px;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ================= TOP BORDER (Window Controls Eklendi) ================= */
+        .top-border {
+            height: 26px;
+            background: url("assets/border.png") repeat-x center, linear-gradient(#1f2836,#101722);
+            border-bottom: 1px solid #3c4b62;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Sağa yaslama için */
+            padding: 0 5px 0 10px;
+            font-size: 11px;
+            color: #6a7e9b;
+            flex-shrink: 0;
+            -webkit-app-region: drag; /* Pencereyi sürükleme özelliği */
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 12px;
+            -webkit-app-region: no-drag; /* Butonların tıklanabilmesi için */
+        }
+
+        .win-btn {
+            background: none; border: none; cursor: pointer; color: #d4ac5c; font-family: monospace; font-size: 16px; font-weight: bold;
+        }
+        .win-btn:hover { color: #ffe400; text-shadow: 0 0 5px rgba(255, 228, 0, 0.5); }
+
+        /* ================= HEADER ================= */
+        .header {
+            height: 85px;
+            background: linear-gradient(to bottom, #162235, #070c14);
+            border-bottom: 2px solid #000;
+            box-shadow: inset 0 1px rgba(255,255,255,.1), 0 4px 10px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 140px;
+            height: 55px;
+            background: url("assets/logo.png") center no-repeat;
+            background-size: contain;
+        }
+
+        .mini-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 10px;
+            border: 1px solid #23354d;
+            border-radius: 4px;
+        }
+
+        .mini-avatar {
+            width: 32px;
+            height: 32px;
+            background: #112033;
+            border: 1px solid #54647d;
+            position: relative;
+        }
+        .mini-avatar .level {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: #000;
+            border: 1px solid #cdbe91;
+            font-size: 9px;
+            padding: 0 2px;
+            color: #fff;
+        }
+
+        .play-btn {
+            width: 160px;
+            height: 50px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to bottom, #b41c1c, #630505);
+            border: 2px solid #e13b3b;
+            box-shadow: 0 0 10px rgba(178, 28, 28, 0.6), inset 0 1px rgba(255,255,255,0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .play-btn:hover { filter: brightness(1.2); }
+        .play-btn span {
+            display: flex; justify-content: center; align-items: center; font-family: "FRQITC01", Georgia, serif;
+            font-size: 24px; color: #ffffff; text-shadow: 0 0 8px #ff4545, 0 2px 2px #000; font-weight: bold;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 12px; }
+
+        .currency-panel {
+            background: linear-gradient(to bottom, #1a273a, #0b121d);
+            border: 1px solid #324765; padding: 6px 12px; border-radius: 3px; display: flex; gap: 15px; font-weight: bold; font-size: 13px; box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+        }
+        .currency-rp { color: #f1a824; }
+        .currency-ip { color: #ffffff; }
+
+        /* ================= LAYOUT ================= */
+        .main {
+            flex: 1; display: grid; grid-template-columns: 1.8fr 1.2fr 300px; gap: 10px; padding: 10px; background: #020710; min-height: 0;
+        }
+
+        .panel {
+            background: linear-gradient(to bottom, #09111c, #050a12); border: 1px solid #1c2e46; box-shadow: inset 0 0 15px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+        }
+        .panel-title {
+            color: #a0b0c7; font-family: Arial, sans-serif; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; background: linear-gradient(to bottom, #142235, #0b1420); padding: 6px 10px; border-bottom: 1px solid #1c2e46; flex-shrink: 0;
+        }
+
+        .left { display: grid; grid-template-rows: 1.3fr 1fr; gap: 10px; min-height: 0; }
+        .spectate-box { flex: 1; background: url("assets/spectate_bg.jpg") center no-repeat; background-size: cover; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 10px; }
+        .watch-btn { background: linear-gradient(to bottom, #bd1b1b, #750707); border: 1px solid #e54a4a; color: white; font-weight: bold; padding: 6px 20px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); text-transform: uppercase; font-size: 11px; flex-shrink: 0; }
+        .watch-btn:hover { filter: brightness(1.1); }
+
+        .news { overflow-y: auto; }
+        .news-item { display: flex; gap: 12px; padding: 10px; border-bottom: 1px solid #111c2b; align-items: center; }
+        .news-item:hover { background: rgba(255,255,255,0.02); }
+        .news-thumb { width: 75px; height: 55px; background: #121e2d; border: 1px solid #293f5b; flex-shrink: 0; }
+        .news-text h4 { color: #4b8df8; font-size: 13px; margin-bottom: 3px; cursor: pointer; }
+        .news-text h4:hover { text-decoration: underline; }
+        .news-text p { color: #8fa3b9; font-size: 11px; line-height: 1.3; }
+
+        .center { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; min-height: 0; }
+        .store-card .store-content { display: flex; padding: 8px 12px; gap: 12px; position: relative; height: 100%; align-items: center; min-height: 0; }
+        .store-image { width: 65px; height: 100%; min-height: 55px; max-height: 85px; background: #121e2d; border: 1px solid #293f5b; flex-shrink: 0; position: relative; }
+        .discount-badge { position: absolute; bottom: -5px; left: -5px; background: #ad1111; color: white; font-size: 10px; padding: 2px 4px; font-weight: bold; border: 1px solid #e54a4a; border-radius: 50%; }
+        .store-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+        .store-info h3 { color: #e1d1a1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .price-tag { color: #f1a824; font-weight: bold; font-size: 12px; }
+        .store-actions { display: flex; gap: 6px; }
+        .store-btn { padding: 4px 12px; background: linear-gradient(to bottom, #1f3a60, #0f2038); border: 1px solid #365b8c; color: #cbdcf0; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .store-btn:hover { filter: brightness(1.2); }
+        .store-btn.unlock { background: linear-gradient(to bottom, #265426, #122b12); border: 1px solid #3d803d; color: #d2ebd2; }
+
+        .video-player { flex: 1; background: #000 url("assets/video_placeholder.jpg") center no-repeat; background-size: cover; display: flex; align-items: center; justify-content: center; color: #fff; position: relative; min-height: 0; }
+
+        .sidebar { background: linear-gradient(to bottom, #0b131f, #050910); border: 1px solid #1c2e46; display: flex; flex-direction: column; min-height: 0; }
+        .profile-area { background: linear-gradient(to bottom, #1d2d42, #0f1926); padding: 12px; border-bottom: 1px solid #293f5b; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .profile-avatar { width: 40px; height: 40px; background: #112033; border: 1px solid #cdbe91; }
+        .profile-info h4 { color: #fff; font-size: 13px; }
+        .profile-info p { color: #5b82a6; font-size: 11px; }
+
+        .chat-rooms-title { background: #09101a; padding: 6px 10px; font-size: 11px; color: #586d87; border-bottom: 1px solid #162436; flex-shrink: 0; }
+        .friend-list { flex: 1; overflow-y: auto; min-height: 0; }
+        .friend { padding: 10px 12px; border-bottom: 1px solid #0f1926; cursor: pointer; display: flex; justify-content: space-between; color: #a2b3c7; }
+        .friend:hover { background: #132237; color: #fff; }
+
+        .chat-bottom { padding: 8px; background: #070d14; border-top: 1px solid #1c2e46; flex-shrink: 0; }
+        .chat-bottom input { width: 100%; padding: 6px 10px; background: #03060a; border: 1px solid #1c2e46; color: #fff; outline: none; font-size: 12px; }
+
+        .sidebar-footer { height: 35px; background: #09111c; border-top: 1px solid #1c2e46; display: flex; justify-content: space-around; align-items: center; color: #4b627e; font-size: 16px; flex-shrink: 0; }
+
+        .bottom-border { height: 24px; background: url("assets/border_bottom.png") repeat-x center, linear-gradient(to bottom, #0f1722, #070b10); border-top: 1px solid #233144; flex-shrink: 0; box-shadow: inset 0 1px rgba(255,255,255,0.05); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #1c324d; }
+        ::-webkit-scrollbar-track { background: #050a12; }
+
+        /* ================= MODAL EKLENTİSİ ================= */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        
+        .modal-box {
+            background: #11141a; border: 1px solid #3a414e; box-shadow: 0 0 20px #000;
+            width: 350px; padding: 2px;
+        }
+        .modal-header {
+            background: linear-gradient(to bottom, #2b323e, #1a1e25); border-bottom: 1px solid #111;
+            padding: 8px 12px; font-size: 14px; color: #d4ac5c; font-weight: bold; text-align: center;
+        }
+        .modal-body { padding: 25px 20px; font-size: 13px; color: #a0a8b5; }
+        
+        .modal-footer {
+            padding: 12px; background: #0c0e12; border-top: 1px solid #222;
+            display: flex; justify-content: space-between;
+        }
+
+        .modal-body .input-group { margin-bottom: 15px; }
+        .modal-body .input-label { display: block; font-size: 12px; color: #b0b0b0; margin-bottom: 6px; }
+        .modal-body .input-field { 
+            width: 100%; padding: 8px; background: #05080c; border: 1px solid #333; color: #fff; 
+            font-size: 13px; outline: none;
+        }
+        .modal-body .input-field:focus { border-color: #d4ac5c; }
+        
+        .modal-btn {
+            padding: 6px 16px; background: linear-gradient(to bottom, #1f3a60, #0f2038);
+            border: 1px solid #365b8c; color: #cbdcf0; cursor: pointer; font-size: 12px; font-weight: bold;
+        }
+        .modal-btn:hover { filter: brightness(1.2); }
+        .modal-btn.success {
+            background: linear-gradient(to bottom, #265426, #122b12);
+            border: 1px solid #3d803d; color: #d2ebd2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal-overlay" id="lobbyModal">
+        <div class="modal-box">
+            <div class="modal-header">Create Custom Game</div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label class="input-label">Name</label>
+                    <input class="input-field" type="text" id="lobbyNameInput" placeholder="My Game Room">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Map</label>
+                    <select class="input-field" id="lobbyMapSelect">
+                        <option value="1">Summoner's Rift</option>
+                        <option value="4">The Twisted Treeline</option>
+                        <option value="30">Howling Abyss</option>
+                        <option value="8">The Crystal Scar</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="btnCancelLobby">Cancel</button>
+                <button class="modal-btn success" id="btnConfirmLobby">Create Game</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-border">
+        <span>League of Legends 1.64.12_08_06_19_20</span>
+        <div class="window-controls">
+            <button class="win-btn" id="btnMin">−</button>
+            <button class="win-btn" id="btnClose">X</button>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="logo"></div>
+            <div class="mini-profile">
+                <div class="mini-avatar"><div class="level">30</div></div>
+                <div>
+                    <strong id="headerSummonerName" style="color: #fff;"> </strong><br>
+                </div>
+            </div>
+        </div>
+
+        <button class="play-btn" id="btnPlay">
+            <span>Play</span>
+        </button>
+
+        <div class="header-right">
+            <div class="currency-panel">
+                <span class="currency-rp">◆ 0 RP</span>
+                <span class="currency-ip">⚔ 0 IP</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main">
+        <div class="left">
+            <div class="panel spectate">
+                <div class="panel-title">Spectate Live</div>
+                <div class="spectate-box">
+                    <div style="color: #fff; text-shadow: 0 2px 4px #000; font-size: 14px; margin-top: 5px;">RANKED - 05:05</div>
+                    <button class="watch-btn">WATCH NOW</button>
+                </div>
+            </div>
+            <div class="panel news">
+                <div class="panel-title">News & Community</div>
+                <div class="news-item">
+                    <div class="news-thumb"></div>
+                    <div class="news-text">
+                        <h4>New Free Champion Rotation</h4>
+                        <p>Greetings Summoners! Here are this week's free champions.</p>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="news-thumb"></div>
+                    <div class="news-text">
+                        <h4>The League of Legends Championship Series</h4>
+                        <p>Season Three of League of Legends is going to be bigger than ever...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="center">
+            <div class="panel store-card">
+                <div class="panel-title">Featured Item</div>
+                <div class="store-content">
+                    <div class="store-image"></div>
+                    <div class="store-info">
+                        <h3>Dark Valkyrie Diana Bundle</h3>
+                        <div class="price-tag">◆ 1462</div>
+                        <div class="store-actions">
+                            <button class="store-btn unlock">UNLOCK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel store-card">
+                <div class="panel-title">On Sale Item</div>
+                <div class="store-content">
+                    <div class="store-image"><div class="discount-badge">-50%</div></div>
+                    <div class="store-info">
+                        <h3>Headhunter Master Yi</h3>
+                        <div class="price-tag">◆ 487</div>
+                        <div class="store-actions">
+                            <button class="store-btn">INFO</button>
+                            <button class="store-btn unlock">UNLOCK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel video">
+                <div class="panel-title">Featured Videos</div>
+                <div class="video-player">
+                    <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; font-size: 11px;">
+                        Champion Spotlight: Diana
+                    </div>
+                    <span style="font-size: 24px; cursor: pointer; opacity: 0.8;">▶</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="profile-area">
+                <div class="profile-avatar"></div>
+                <div class="profile-info">
+                    <h4 id="sidebarSummonerName"> </h4>
+                    <p>Online</p>
+                </div>
+            </div>
+			
+			<div class="chat-rooms-title">Arkadaş İstekleri</div>
+<div class="friend-list" id="friendRequestList">
+    </div>
+<div class="chat-rooms-title">Arkadaşlar</div>
+<div class="friend-list" id="friendList">
+    </div>
+			
+            <div class="chat-rooms-title">Public Chat</div>
+			
+			<div class="friend-actions" style="padding: 10px;">
+    <input type="text" id="friendNameInput" placeholder="Sihirdar Adı..." style="width: 100%; padding: 4px; background: #05080c; border: 1px solid #333; color: #fff;">
+    <button id="btnAddFriend" style="width: 100%; margin-top: 5px; cursor: pointer;">Arkadaş Ekle</button>
+</div>
+
+            <div class="friend-list" id="friendList">
+                <div class="friend"><span>Strategy</span> <span style="color:#556e8b;">(156)</span></div>
+                <div class="friend"><span>Noob</span> <span style="color:#556e8b;">(132)</span></div>
+            </div>
+            <div class="chat-bottom">
+                <input type="text" id="chatInput" placeholder="Create or Join a Chat Room">
+            </div>
+            <div class="sidebar-footer">
+                <span>👥 54</span><span>💬</span><span>⚙</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-border"></div>
+
+<script src="scripts/socket-manager.js"></script>
+<script>
+    const $ = id => document.getElementById(id);
+
+    // Pencere Kontrolleri
+    $('btnMin').addEventListener('click', () => window.electron.window.minimize());
+    $('btnClose').addEventListener('click', () => window.electron.window.close());
+
+     async function init() {
+        const config = await window.electron.config.get();
+
+        SocketManager.connect(
+            config.serverHost || '127.0.0.1',
+            config.serverPort || 8080
+        );
+
+        let user = SocketManager.getUser();
+
+        if (!user) {
+            try {
+                const saved = localStorage.getItem('user');
+                if (saved) {
+                    user = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('localStorage user parse error:', e);
+            }
+        }
+
+        if (user) {
+            const displayName = user.summonerName || "Bilinmeyen Sihirbaz";
+            
+            if ($('headerSummonerName')) $('headerSummonerName').innerText = displayName;
+            if ($('sidebarSummonerName')) $('sidebarSummonerName').innerText = displayName;
+            
+            $('lobbyNameInput').value = displayName + "'s Room";
+        } else {
+            if ($('headerSummonerName')) $('headerSummonerName').innerText = "Giriş Yapılmadı";
+            if ($('sidebarSummonerName')) $('sidebarSummonerName').innerText = "Offline";
+        }
+		
+		loadFriendData();
+    }
+
+// Örnek: home.html içindeki scriptte
+async function handleAddFriend() {
+    const friendName = document.getElementById('friendNameInput').value;
+    const currentUser = SocketManager.getUser(); // Mevcut kullanıcıyı al
+    
+    if (currentUser) {
+        const result = await window.electron.friend.add(currentUser.summonerName, friendName);
+        if (result.success) {
+            alert('Başarıyla eklendi!');
+            // Listeyi burada DOM üzerinden güncelle
+        } else {
+            alert(result.message);
+        }
+    }
+}
+
+async function loadFriendData() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    // 1. Arkadaşları çek
+    const friends = await window.electron.friend.getList(user.username);
+    
+    // 2. İstekleri çek
+    const requestResult = await window.electron.friend.getRequests(user.username);
+    const requests = requestResult.success ? requestResult.requests : [];
+
+    // 3. Arayüzü Güncelle (Hepsini tek seferde bas)
+    renderUI(friends, requests);
+}
+
+function renderUI(friends, requests) {
+    const listEl = $('friendList');
+    const reqListEl = $('friendRequestList');
+    
+    listEl.innerHTML = '';
+    reqListEl.innerHTML = '';
+
+    // İstekleri bas
+    requests.forEach(req => {
+        const div = document.createElement('div');
+        div.className = 'friend';
+        div.innerHTML = `
+            <div class="req-row">
+                <span>${req.from}</span>
+                <div class="req-btns">
+                    <button class="lol-btn accept" onclick="acceptRequest('${req.from}')">✓</button>
+                    <button class="lol-btn reject" onclick="rejectRequest('${req.from}')">✕</button>
+                </div>
+            </div>
+        `;
+        reqListEl.appendChild(div);
+    });
+
+    // Arkadaşları bas
+    friends.forEach(friend => {
+        const isOnline = friend.online === true;
+        const div = document.createElement('div');
+        div.className = 'friend';
+        div.innerHTML = `
+            <span>${friend.summonerName}</span>
+            <span style="color: ${isOnline ? '#46c846' : '#556e8b'}">${isOnline ? 'Online' : 'Offline'}</span>
+        `;
+        listEl.appendChild(div);
+    });
+}
+$('btnPlay').addEventListener('click', () => {
+        window.electron.navigate('lobby-screen.html');
+    });
+	
+	// Arkadaş Ekleme Butonu
+$('btnAddFriend').addEventListener('click', async () => {
+    const friendName = $('friendNameInput').value.trim();
+    if (!friendName) return alert('Lütfen bir isim girin.');
+
+    // 1. Backend'den veritabanına eklemesini iste
+    const user = JSON.parse(localStorage.getItem('user'));
+    const result = await window.electron.friend.add(user.summonerName, friendName);
+
+    if (result.success) {
+        alert('Arkadaş eklendi!');
+        updateFriendList(result.friends); // Aşağıdaki fonksiyonu çağır
+    } else {
+        alert(result.message);
+    }
+    $('friendNameInput').value = '';
+});
+
+// Arkadaş listesini arayüzde gösteren ortak fonksiyon
+function updateFriendLists(friends) {
+    const listEl = $('friendList');
+    const reqListEl = $('friendRequestList');
+    
+    listEl.innerHTML = '';
+    reqListEl.innerHTML = '';
+
+    friends.forEach(friend => {
+        if (friend.status === 'pending') {
+            // İSTEK KISMI
+            const div = document.createElement('div');
+            div.className = 'friend';
+            div.innerHTML = `
+                <span>${friend.summonerName}</span>
+                <button onclick="acceptRequest('${friend.summonerName}')" style="cursor:pointer">Onayla</button>
+            `;
+            reqListEl.appendChild(div);
+        } else if (friend.status === 'accepted') {
+            // ARKADAŞ KISMI
+            const div = document.createElement('div');
+            div.className = 'friend';
+            div.innerHTML = `
+                <span>${friend.summonerName}</span>
+                <span style="color: ${friend.online ? '#46c846' : '#556e8b'}">
+                    ${friend.online ? 'Online' : 'Offline'}
+                </span>
+            `;
+            listEl.appendChild(div);
+        }
+    });
+}
+
+async function acceptRequest(requesterName) {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const result = await window.electron.friend.accept(user.username, requesterName);
+    if (result.success) {
+        alert("Arkadaşlık kabul edildi!");
+        location.reload(); // Listeyi güncelle
+    } else {
+        alert("Hata: " + result.message);
+    }
+}
+
+async function rejectRequest(requesterName) {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const result = await window.electron.friend.reject(user.username, requesterName);
+    if (result.success) {
+        alert("İstek reddedildi.");
+        location.reload(); // Listeyi güncelle
+    } else {
+        alert("Hata: " + result.message);
+    }
+}
+
+// Sunucudan arkadaş listesi geldiğinde arayüzü güncelle
+SocketManager.on('friend:list', (friends) => {
+    const listEl = $('friendList');
+    listEl.innerHTML = ''; // Listeyi temizle
+
+    friends.forEach(friend => {
+        const div = document.createElement('div');
+        div.className = 'friend';
+        div.innerHTML = `
+            <span>${friend.summonerName}</span> 
+            <span style="color: ${friend.online ? '#46c846' : '#556e8b'}">
+                ${friend.online ? 'Online' : 'Offline'}
+            </span>
+        `;
+        listEl.appendChild(div);
+    });
+});
+
+// home.html içerisindeki script bloğu
+SocketManager.on('friend:request_received', (data) => {
+    console.log("Yeni arkadaşlık isteği:", data);
+    
+    // İsteği görsel olarak ekrana basacak fonksiyonu çağır
+    // Örneğin loadFriendData() veya arkadaş listesini yenileyen fonksiyonun hangisiyse:
+    loadFriendData(); 
+    refreshFriendRequestsUI();
+    // Kullanıcıya da bir uyarı verebilirsin
+    alert(data.from + " sana arkadaşlık isteği gönderdi!");
+});
+
+function refreshFriendRequestsUI() {
+    // Sunucudan güncel istek listesini tekrar çek (yeni bir event ile)
+    SocketManager.send('friend:get_requests', { username: user.username });
+}
+
+    init();
+</script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>League of Legends</title>
+<style>
+  /* ─── Global & Reset ─── */
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+  body { 
+    overflow: hidden; 
+    background-color: #000;
+    color: #f1f1f1;
+    user-select: none;
+  }
+  
+  input { user-select: text; }
+  a { text-decoration: none; color: #0094e4; cursor: pointer; }
+  a:hover { text-decoration: underline; color: #33c3ff; }
+
+  /* ─── Video Background ─── */
+  video.login-bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ─── Runic Patterned Borders (Top & Bottom) ─── */
+  .patterned-border {
+    background-color: #171d28;
+    background-image: url('assets/border.png');
+    background-repeat: repeat-x;
+    background-position: center;
+    border-top: 1px solid #333d4d;
+    border-bottom: 1px solid #000;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.8);
+  }
+
+  /* ─── Titlebar ─── */
+  .titlebar {
+    position: fixed;
+    top: 0; left: 0; right: 0; height: 26px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 10px;
+    -webkit-app-region: drag;
+    z-index: 9999;
+  }
+  .titlebar-title { font-size: 11px; color: #8a95a5; font-weight: normal; }
+  .titlebar-controls { display: flex; align-items: center; gap: 14px; -webkit-app-region: no-drag; padding-right: 5px; }
+  
+  .titlebar-btn { 
+    background: none; border: none; cursor: pointer; font-size: 16px; 
+    color: #d4ac5c;
+    font-family: monospace;
+  }
+  .titlebar-btn:hover { color: #ffe400; text-shadow: 0 0 5px rgba(255, 228, 0, 0.5); }
+
+  /* ─── Right Sidebar Wrapper ─── */
+  .right-panel-wrapper {
+    position: absolute;
+    top: 35px;
+    right: 40px;
+    width: 360px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Classic Logo */
+  .classic-logo {
+    width: 320px;
+    height: 140px;
+    background: url('assets/logo.png') center/contain no-repeat;
+    margin-bottom: 20px;
+  }
+
+  /* Main Login Box */
+  .login-box {
+    width: 100%;
+    background: rgba(12, 12, 14, 0.82);
+    border: 1px solid #3a3a3a;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    padding: 25px 30px 20px 30px;
+  }
+
+  .login-box-title {
+    font-size: 16px;
+    color: #fff;
+    margin-bottom: 18px;
+    font-weight: normal;
+  }
+
+  /* ─── Form Inputs ─── */
+  .input-group { margin-bottom: 14px; }
+  .input-label {
+    display: block;
+    font-size: 12px;
+    color: #b0b0b0;
+    margin-bottom: 5px;
+  }
+  .input-field {
+    width: 100%;
+    padding: 5px 6px;
+    background: #fff;
+    border: 1px solid #333;
+    color: #000;
+    font-size: 14px;
+  }
+  .input-field:focus { outline: 1px solid #e4812a; }
+
+  .login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    margin-bottom: 15px;
+  }
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #b0b0b0;
+    cursor: pointer;
+  }
+
+  /* Orijinal Turuncu Log In Butonu */
+  .btn-primary {
+    background: linear-gradient(to bottom, #e57200 0%, #b84b00 100%);
+    border: 1px solid #ff9c3c;
+    border-radius: 2px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 5px 22px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary:active { filter: brightness(0.9); }
+  .btn-secondary { background: #333; color: #fff; border: 1px solid #555; padding: 5px 10px; cursor: pointer; font-size: 11px; }
+
+  /* Login Links */
+  .login-links {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: #a0a0a0;
+  }
+
+  /* "FREE! Sign up now" Alanı */
+  .free-to-play-box {
+    margin-top: 25px;
+    text-align: center;
+    font-size: 13px;
+    color: #c0c0c0;
+    line-height: 1.6;
+  }
+  .yellow-text { color: #ffe400; font-weight: bold; }
+
+  /* Bottom Right Controls */
+  .bottom-right-controls {
+    position: fixed;
+    bottom: 35px;
+    right: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    z-index: 10;
+    font-size: 11px;
+  }
+  .bottom-right-link { color: #0094e4; font-size: 11px; }
+  .retro-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #888;
+    cursor: pointer;
+  }
+  .retro-checkbox-label input { accent-color: #555; }
+
+  /* Gizli Altyapı Bileşenleri */
+  .auth-tabs, .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
+  .msg-error { color: #ff4444; font-size: 11px; margin-bottom: 10px; display: none; }
+  .msg-error.show { display: block; }
+  .msg-success { color: #44ff44; font-size: 11px; margin-bottom: 10px; display: none; }
+  .msg-success.show { display: block; }
+
+  /* Connection Status Bar (Sol Alt) */
+  .conn-status {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 26px;
+    display: flex; align-items: center; padding: 0 15px; z-index: 100; gap: 8px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #555; }
+  .status-dot.online { background: #44ff44; box-shadow: 0 0 4px #44ff44; }
+  .status-dot.blink { animation: blink 1s infinite; background: #e4812a; }
+  @keyframes blink { 50% { opacity: 0.5; } }
+  .conn-status-text { font-size: 11px; color: #8a95a5; }
+
+  #toast-container { position: fixed; bottom: 35px; left: 20px; z-index: 9999; }
+  .toast { background: rgba(0,0,0,0.9); border: 1px solid #444; padding: 8px 12px; margin-top: 8px; font-size: 11px; color: #fff; }
+  
+  /* ─── Custom Modal (Hata Penceresi) ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .modal-box {
+    background: #11141a; border: 1px solid #3a414e; box-shadow: 0 0 20px #000;
+    width: 320px; text-align: center; padding: 2px;
+  }
+  .modal-header {
+    background: linear-gradient(to bottom, #2b323e, #1a1e25); border-bottom: 1px solid #111;
+    padding: 8px; font-size: 13px; color: #d4ac5c; font-weight: bold;
+  }
+  .modal-body { padding: 25px 20px; font-size: 13px; color: #a0a8b5; line-height: 1.5; }
+  .modal-footer { padding: 10px; background: #0c0e12; border-top: 1px solid #222; }
+  
+  #settingsSaved { display: none; color: green; font-weight: bold; }
+#settingsSaved.show { display: block; }
+
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="errorModal">
+  <div class="modal-box">
+    <div class="modal-header">Giriş Başarısız</div>
+    <div class="modal-body">Geçersiz Kullanıcı Adı / Şifre kombinasyonu. Lütfen tekrar deneyin.</div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="document.getElementById('errorModal').classList.remove('show')">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="titlebar patterned-border">
+  <span class="titlebar-title" id="versionTitle">League of Legends 1.0.0.26</span>
+  <div class="titlebar-controls">
+    <button class="titlebar-btn" id="btnMin">−</button>
+    <button class="titlebar-btn" id="btnClose">X</button>
+  </div>
+</div>
+
+<video autoplay loop id="loginVideo" class="login-bg">
+  <source src="assets/login-bg.mp4" type="video/mp4">
+</video>
+
+<div class="right-panel-wrapper">
+  
+  <div class="classic-logo"></div>
+
+  <div class="login-box">
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login"></div>
+      <div class="auth-tab" data-tab="register"></div>
+      <div class="auth-tab" data-tab="settings"></div>
+    </div>
+
+    <div class="auth-panel active" id="panelLogin">
+      <div class="login-box-title">Account Login</div>
+      
+      <div class="input-group">
+        <label class="input-label">Username</label>
+        <input class="input-field" type="text" id="loginUser" autocomplete="username">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input class="input-field" type="password" id="loginPass" autocomplete="current-password">
+      </div>
+
+      <div class="login-options">
+        <label class="checkbox-group">
+          <input type="checkbox" id="rememberMe">
+          <span>Remember Username</span>
+        </label>
+        <button class="btn-primary" id="btnLogin">Log In</button>
+      </div>
+
+      <div class="msg-error" id="loginError"></div>
+
+      <div class="login-links">
+        <div>Don't have an account? <a onclick="switchTab('register')">Sign up now!</a></div>
+        <div>Forgot your <a href="#">username</a>?</div>
+        <div>Forgot your <a href="#">password</a>?</div>
+        <div style="margin-top:8px; border-top:1px solid #2a2a2a; padding-top:8px; text-align:right;">
+          <a onclick="switchTab('settings')" style="color:#888; font-size:11px;">⚙ Server Settings</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-panel" id="panelRegister">
+      <div class="login-box-title">Create Account</div>
+      <div class="input-group">
+        <label class="input-label">Username</label>
+        <input class="input-field" type="text" id="regUser">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input class="input-field" type="password" id="regPass">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Repeat Password</label>
+        <input class="input-field" type="password" id="regPass2">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Summoner Name</label>
+        <input class="input-field" type="text" id="regSummoner">
+      </div>
+
+      <div class="msg-error" id="registerError"></div>
+      <div class="msg-success" id="registerSuccess"></div>
+
+      <div class="login-options">
+        <a onclick="switchTab('login')">← Back</a>
+        <button class="btn-primary" id="btnRegister">Sign Up</button>
+      </div>
+    </div>
+
+    <div class="auth-panel" id="panelSettings">
+      <div class="login-box-title">Server Settings</div>
+      <div class="input-group">
+        <label class="input-label">Server IP</label>
+        <input class="input-field" type="text" id="serverHost" placeholder="127.0.0.1">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Port</label>
+        <input class="input-field" type="number" id="serverPort" placeholder="8080">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Game Path</label>
+        <div style="display:flex; gap:5px;">
+          <input class="input-field" type="text" id="gamePath" readonly style="flex:1; font-size:11px;">
+          <button class="btn-secondary" id="btnBrowse">Browse</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Game Server Path (BrokenWings)</label>
+        <div style="display:flex; gap:5px;">
+          <input class="input-field" type="text" id="serverPath" readonly style="flex:1; font-size:11px;" placeholder="ChildrenOfTheGraveServerConsole.exe klasörü">
+          <button class="btn-secondary" id="btnBrowseServer">Browse</button>
+        </div>
+      </div>
+
+      <div class="msg-success" id="settingsSaved"></div>
+
+      <div class="login-options">
+        <a onclick="switchTab('login')">← Back</a>
+        <button class="btn-primary" id="btnSaveSettings">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="free-to-play-box">
+    Playing League of Legends is <span class="yellow-text">FREE!</span><br>
+    <a onclick="switchTab('register')">Sign up now</a>
+  </div>
+
+</div>
+
+<div class="bottom-right-controls">
+  <a class="bottom-right-link" href="#">Terms of Use</a>
+  <label class="retro-checkbox-label">
+    <span style="font-size:10px;">Disable Menu Audio</span>
+    <input type="checkbox" id="checkMute">
+  </label>
+</div>
+
+<div class="conn-status patterned-border" id="connStatus">
+  <div class="status-dot blink" id="connDot"></div>
+  <span class="conn-status-text" id="connText">Connecting to PvP.net...</span>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="scripts/socket-manager.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+
+// Sadece Minimize ve Close mekanizmaları kalacak
+$('btnMin').addEventListener('click', () => window.electron.window.minimize());
+$('btnClose').addEventListener('click', () => window.electron.window.close());
+
+$('checkMute').addEventListener('change', (e) => {
+  $('loginVideo').muted = e.target.checked;
+});
+
+function switchTab(tabName) {
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  $('panel' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+}
+
+// Config & Socket Altyapısı
+let config = {};
+async function loadConfig() {
+  if (window.electron && window.electron.config) {
+    config = await window.electron.config.get();
+  }
+  $('serverHost').value = config.serverHost || '127.0.0.1';
+  $('serverPort').value = config.serverPort || 27017;
+  $('gamePath').value  = config.gamePath  || '';
+  $('serverPath').value = config.serverPath || '';
+  if (config.savedUsername) {
+    $('loginUser').value = config.savedUsername;
+    $('rememberMe').checked = true;
+  }
+}
+
+function updateConnStatus(state, message) {
+  const dot = $('connDot');
+  const text = $('connText');
+  dot.className = 'status-dot';
+  if (state === 'connecting') {
+    dot.classList.add('blink');
+    text.textContent = message || 'PvP.net ağına bağlanılıyor...';
+  } else if (state === 'connected') {
+    dot.classList.add('online');
+    text.textContent = message || 'PvP.net ağına bağlandı.';
+  } else if (state === 'error') {
+    dot.style.background = '#ff4444';
+    text.textContent = message || 'Sunucuya bağlanılamadı.';
+  }
+}
+
+function connectToServer() {
+  if (typeof SocketManager === 'undefined') return;
+  const host = config.serverHost || '127.0.0.1';
+  const port = config.serverPort || 27017;
+  updateConnStatus('connecting', `Connecting to ${host}:${port}...`);
+  SocketManager.connect(host, port);
+}
+
+if (typeof SocketManager !== 'undefined') {
+  SocketManager.on('connection:connected', () => { updateConnStatus('connected', 'Connected to PvP.net.'); });
+  SocketManager.on('connection:disconnected', () => {
+    updateConnStatus('error', 'Connection lost. Reconnecting...');
+    setTimeout(() => { if (!SocketManager.isConnected()) connectToServer(); }, 3000);
+  });
+  SocketManager.on('connection:error', ({ message }) => { updateConnStatus('error', `Connection error: ${message}`); });
+  
+  SocketManager.on('auth:success', (user) => {
+    showError('loginError', '');
+    toast('Hoş geldiniz!', 'success');
+    
+    // YENİ: sessionStorage yerine localStorage
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    if(window.electron) {
+        window.electron.navigate('home.html'); // YENİ: Tam yol yerine dinamik yol
+    }
+  });
+
+  SocketManager.on('auth:error', (data) => {
+    showError('loginError', ''); 
+    $('btnLogin').disabled = false; 
+    $('btnLogin').textContent = 'Log In';
+    
+    if (data.message === 'kullanici_bulunamadi') {
+      $('errorModal').classList.add('show');
+    } else {
+      showError('loginError', data.message || 'Giriş hatası.');
+    }
+  });
+
+  SocketManager.on('register:success', (data) => {
+    $('btnRegister').disabled = false;
+    $('btnRegister').textContent = 'Kayıt Başarılı!';
+    alert('Hesabınız oluşturuldu, giriş yapabilirsiniz.');
+  });
+
+  SocketManager.on('register:error', (data) => {
+    $('btnRegister').disabled = false;
+    $('btnRegister').textContent = 'Sign Up';
+    showError('registerError', data.message || 'Kayıt sırasında bir hata oluştu.');
+  });
+}
+
+// btnLogin tıklanma eventi
+$('btnLogin').addEventListener('click', async () => {
+    const btn = $('btnLogin');
+    const user = $('loginUser').value;
+    const pass = $('loginPass').value;
+
+    if (!user || !pass) return showError('loginError', 'Alanları doldur!');
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+        const res = await window.electron.login(user, pass);
+		
+        if (res.success) {
+            // YENİ: localStorage kullanımı (Veri kaybolmaz)
+            localStorage.setItem('user', JSON.stringify(res.user));
+            window.electron.navigate('home.html');
+        } else {
+            showError('loginError', res.message);
+        }
+    } catch (e) {
+        showError('loginError', 'Sistem hatası: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Log In';
+    }
+});
+
+$('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogin() {
+  const username = $('loginUser').value.trim();
+  const password = $('loginPass').value;
+  
+  if (!username || !password) { 
+      showError('loginError', 'Kullanıcı adı ve şifre gereklidir.'); 
+      return; 
+  }
+  
+  showError('loginError', '');
+  $('btnLogin').disabled = true; 
+  $('btnLogin').textContent = '...';
+
+  if ($('rememberMe').checked && window.electron) {
+    window.electron.config.set({ savedUsername: username });
+  }
+
+  if(typeof SocketManager !== 'undefined') {
+      SocketManager.sendLogin({ username, password });
+  }
+}
+
+$('btnRegister').addEventListener('click', async () => {
+    const username = $('regUser').value.trim();
+    const password = $('regPass').value;
+    const summonerName = $('regSummoner').value.trim();
+
+    if (password.length < 6) {
+        showError('registerError', 'Şifre en az 6 karakter olmalı!');
+        return;
+    }
+
+    $('btnRegister').textContent = 'Kayıt Olunuyor...';
+    $('btnRegister').disabled = true;
+
+    const response = await window.electron.register(username, password, summonerName);
+
+    if (response.success) {
+        alert('Kayıt Başarılı! Giriş yapabilirsiniz.');
+    } else {
+        showError('registerError', response.message);
+    }
+
+    $('btnRegister').textContent = 'Kayıt Ol';
+    $('btnRegister').disabled = false;
+});
+
+$('btnBrowse').addEventListener('click', async () => {
+    const path = await window.electron.game.selectPath();
+    if (path) {
+        $('gamePath').value = path;
+    }
+});
+
+$('btnBrowseServer').addEventListener('click', async () => {
+    const path = await window.electron.game.selectServerPath();
+    if (path) {
+        $('serverPath').value = path;
+    }
+});
+
+$('btnSaveSettings').addEventListener('click', async () => {
+    const newConfig = {
+        serverHost: $('serverHost').value,
+        serverPort: $('serverPort').value,
+        gamePath: $('gamePath').value,
+        serverPath: $('serverPath').value
+    };
+    
+    await window.electron.config.set(newConfig);
+    
+    const msg = $('settingsSaved');
+    msg.textContent = 'Ayarlar Kaydedildi!';
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 2000);
+});
+
+window.addEventListener('DOMContentLoaded', async () => {
+    const cfg = await window.electron.config.get();
+    if(cfg) {
+        $('serverHost').value = cfg.serverHost || '127.0.0.1';
+        $('serverPort').value = cfg.serverPort || '8080';
+        $('gamePath').value = cfg.gamePath || '';
+        $('serverPath').value = cfg.serverPath || '';
+    }
+});
+
+function showError(id, msg) {
+  const el = $(id); if (el) { el.textContent = msg; el.classList.toggle('show', !!msg); }
+}
+
+function toast(message, type = 'info') {
+  const container = $('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = message;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+if(window.electron && window.electron.getVersion) {
+  window.electron.getVersion().then(v => { $('versionTitle').textContent = 'League of Legends ' + v; });
+}
+
+async function init() { 
+  await loadConfig(); 
+  connectToServer(); 
+  $('loginVideo').play().catch(() => console.log("Autoplay bekleniyor..."));
+}
+init();
+</script>
+</body>
+</html>

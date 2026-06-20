@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>PvP.net Champion Select</title>
+<style>
+    @font-face { font-family: "FRQITC01"; src: url("assets/fonts/FRQITC01.ttf") format("truetype"); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        height: 100vh; background: #010610; color: #cdbe91;
+        font-family: Tahoma, Arial, sans-serif; overflow: hidden;
+        font-size: 12px; user-select: none; display: flex; flex-direction: column;
+    }
+
+    .top-border {
+        height: 26px; background: url("assets/border.png") repeat-x center, linear-gradient(#1f2836,#101722);
+        border-bottom: 1px solid #3c4b62; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 5px 0 10px; font-size: 11px; color: #6a7e9b; flex-shrink: 0; -webkit-app-region: drag;
+    }
+    .window-controls { display: flex; gap: 12px; -webkit-app-region: no-drag; }
+    .win-btn { background: none; border: none; cursor: pointer; color: #d4ac5c; font-family: monospace; font-size: 16px; font-weight: bold; }
+    .win-btn:hover { color: #ffe400; text-shadow: 0 0 5px rgba(255,228,0,0.5); }
+
+    .header {
+        height: 56px; background: linear-gradient(to bottom, #162235, #070c14); border-bottom: 2px solid #000;
+        box-shadow: inset 0 1px rgba(255,255,255,.1), 0 4px 10px rgba(0,0,0,0.8);
+        display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0;
+    }
+    .header h2 { color: #e1d1a1; font-size: 18px; font-family: "FRQITC01", serif; letter-spacing: 1px; }
+    .header .status-text { color: #7a9bbc; font-size: 12px; }
+
+    .lol-btn {
+        padding: 7px 18px; background: linear-gradient(to bottom, #1e3a5f, #0c1e35);
+        border: 1px solid #3a6590; border-bottom: 2px solid #c8aa6e;
+        color: #c8aa6e; font-size: 12px; font-weight: bold;
+        font-family: Tahoma, Arial, sans-serif; cursor: pointer;
+        text-transform: uppercase; letter-spacing: 0.5px; transition: filter .15s;
+    }
+    .lol-btn:hover:not(:disabled) { filter: brightness(1.25); }
+    .lol-btn:disabled { opacity: .4; cursor: default; }
+    .lol-btn.danger { background: linear-gradient(to bottom, #4a1313, #220707); border-color: #822222; border-bottom-color: #e03030; color: #f0a0a0; }
+    .lol-btn.lock   { background: linear-gradient(to bottom, #1a4220, #0a2110); border-color: #2d6e35; border-bottom-color: #46c846; color: #7fd87f; }
+    .lol-btn.lock.locked { background: linear-gradient(to bottom, #2a2a14, #15150a); border-color: #6e6e2d; border-bottom-color: #c8c846; color: #d8d87f; }
+
+    .main-body { flex: 1; display: flex; min-height: 0; }
+
+    /* ── Sol: Oyuncu Listesi (takımlara göre) ── */
+    .roster { width: 260px; background: #020710; border-right: 1px solid #1c2e46; overflow-y: auto; flex-shrink: 0; }
+    .roster-team-title {
+        padding: 8px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+        border-bottom: 1px solid #1c2e46;
+    }
+    .roster-team-title.blue   { background: linear-gradient(to bottom, #11365c, #0a1f38); color: #82b9f7; }
+    .roster-team-title.purple { background: linear-gradient(to bottom, #4a1c5c, #2a0e36); color: #d682f7; }
+    .roster-player {
+        padding: 9px 12px; border-bottom: 1px solid #0e1826;
+        display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .roster-player .pname { color: #cdbe91; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .roster-player .pname.me { color: #ffe400; font-weight: bold; }
+    .roster-player .pchamp { color: #6a8caa; font-size: 11px; flex-shrink: 0; }
+    .roster-player .plock { font-size: 10px; flex-shrink: 0; padding: 2px 6px; border-radius: 2px; }
+    .roster-player .plock.waiting { color: #7a9bbc; }
+    .roster-player .plock.locked  { color: #46c846; font-weight: bold; }
+
+    /* ── Sağ: Şampiyon Seçim Grid'i ── */
+    .pick-area { flex: 1; display: flex; flex-direction: column; padding: 16px; min-width: 0; }
+    .pick-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .pick-toolbar .label { color: #7a9bbc; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .champion-grid {
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+        flex: 1; align-content: start; overflow-y: auto;
+    }
+    .champion {
+        border: 1px solid #2a3f5c; background: linear-gradient(to bottom, #0c1626, #070d18);
+        padding: 14px 8px; cursor: pointer; text-align: center; color: #a2b3c7;
+        font-size: 12px; transition: filter .1s, border-color .1s;
+    }
+    .champion:hover { border-color: #c8aa6e; filter: brightness(1.15); }
+    .champion.selected { border: 2px solid #ffe400; color: #ffe400; }
+    .champion.disabled { opacity: .35; cursor: default; pointer-events: none; }
+
+    .bottom-bar {
+        padding: 12px 16px; background: #070d14; border-top: 1px solid #1c2e46;
+        display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .bottom-bar .my-pick { color: #cdbe91; font-size: 13px; }
+    .bottom-bar .my-pick .champ-name { color: #ffe400; font-weight: bold; }
+
+    .bottom-border { height: 24px; background: url("assets/border_bottom.png") repeat-x center, linear-gradient(to bottom, #0f1722, #070b10); border-top: 1px solid #233144; flex-shrink: 0; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #1c324d; }
+    ::-webkit-scrollbar-track { background: #050a12; }
+</style>
+</head>
+<body>
+    <div class="top-border">
+        <span>League of Legends 1.64.12_08_06_19_20</span>
+        <div class="window-controls">
+            <button class="win-btn" id="btnMin">−</button>
+            <button class="win-btn" id="btnClose">X</button>
+        </div>
+    </div>
+
+    <header class="header">
+        <h2>Champion Select</h2>
+        <div class="status-text" id="statusText">Şampiyonunu seç ve kilitle...</div>
+        <button class="lol-btn danger" id="btnCancel">⬅ İptal</button>
+    </header>
+
+    <div class="main-body">
+        <div class="roster" id="roster">
+            <!-- JS ile doldurulur -->
+        </div>
+
+        <div class="pick-area">
+            <div class="pick-toolbar">
+                <span class="label">Şampiyon Seç</span>
+            </div>
+            <div id="champions" class="champion-grid"></div>
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="my-pick" id="myPickLabel">Henüz şampiyon seçilmedi.</div>
+        <button class="lol-btn lock" id="lockBtn">Lock In</button>
+    </div>
+
+    <div class="bottom-border"></div>
+
+<script>
+    const $ = id => document.getElementById(id);
+    $('btnMin').addEventListener('click', () => window.electron.window.minimize());
+    $('btnClose').addEventListener('click', () => window.electron.window.close());
+
+    const champions = ["Ahri", "Annie", "Ashe", "Garen", "Jax", "Lux", "MasterYi", "Nunu", "Shaco"];
+
+    let currentUser = null;
+    let currentLobby = null;
+    let selectedChampion = null;
+    let locked = false;          // kendi kilit durumumuz (UI'ı disable etmek için)
+    let launchTriggered = false; // aynı oyuncuda game:launch'ın birden fazla kez tetiklenmesini engeller
+    let pollTimer = null;
+
+    // ── Şampiyon Grid'i Oluştur ──
+    const grid = $('champions');
+    champions.forEach(champ => {
+        const div = document.createElement('div');
+        div.className = 'champion';
+        div.textContent = champ;
+        div.dataset.champ = champ;
+        div.onclick = () => {
+            if (locked) return; // kilitlendikten sonra seçim değiştirilemez
+            document.querySelectorAll('.champion').forEach(x => x.classList.remove('selected'));
+            div.classList.add('selected');
+            selectedChampion = champ;
+            $('myPickLabel').innerHTML = `Seçilen: <span class="champ-name">${champ}</span>`;
+        };
+        grid.appendChild(div);
+    });
+
+    // ── Roster'ı (oyuncu listesi) render et: takımlara göre alt alta ──
+    function renderRoster(lobby) {
+        const roster = $('roster');
+        roster.innerHTML = '';
+
+        const blue = (lobby.players || []).filter(p => p.team !== 'PURPLE');
+        const purple = (lobby.players || []).filter(p => p.team === 'PURPLE');
+
+        function renderGroup(title, cls, list) {
+            const head = document.createElement('div');
+            head.className = 'roster-team-title ' + cls;
+            head.textContent = title;
+            roster.appendChild(head);
+
+            list.forEach(p => {
+                const row = document.createElement('div');
+                row.className = 'roster-player';
+                const isMe = currentUser && p.name === currentUser.summonerName;
+                row.innerHTML = `
+                    <span class="pname ${isMe ? 'me' : ''}">${p.name}</span>
+                    <span class="pchamp">${p.champion ? p.champion : ''}</span>
+                    <span class="plock ${p.locked ? 'locked' : 'waiting'}">${p.locked ? '✓ Kilitli' : 'Seçiyor...'}</span>
+                `;
+                roster.appendChild(row);
+            });
+        }
+
+        renderGroup('Team 1 — Blue', 'blue', blue);
+        renderGroup('Team 2 — Purple', 'purple', purple);
+
+        // Durum metni: kaç oyuncu kilitlendi
+        const total = (lobby.players || []).length;
+        const lockedCount = (lobby.players || []).filter(p => p.locked).length;
+        $('statusText').textContent = `${lockedCount} / ${total} oyuncu kilitlendi`;
+    }
+
+    // ── Lock In ──
+    $('lockBtn').addEventListener('click', async () => {
+        if (locked) return;
+        if (!selectedChampion) {
+            alert('Lütfen önce bir şampiyon seç!');
+            return;
+        }
+        if (!currentLobby || !currentUser) return;
+
+        $('lockBtn').disabled = true;
+
+        const result = await window.electron.champselect.lockChampion(
+            currentLobby.name, currentUser.summonerName, selectedChampion
+        );
+
+        if (!result.success) {
+            alert('Kilitlenemedi: ' + result.message);
+            $('lockBtn').disabled = false;
+            return;
+        }
+
+        // Kendi tarafımızda kilitle: artık şampiyon değiştirilemez
+        locked = true;
+        $('lockBtn').classList.add('locked');
+        $('lockBtn').textContent = '✓ Kilitlendi';
+        $('lockBtn').disabled = true;
+        document.querySelectorAll('.champion').forEach(x => x.classList.add('disabled'));
+
+        currentLobby = result.lobby;
+        localStorage.setItem('currentLobby', JSON.stringify(currentLobby));
+        renderRoster(currentLobby);
+
+        // Eğer ben kilitleyince herkes tamamlandıysa hemen başlatmayı dene
+        // (polling zaten 2 sn'de bir de kontrol ediyor, burada anlık tepki için).
+        if (result.allLocked) {
+            maybeLaunchGame(currentLobby);
+        }
+    });
+
+    // ── İptal (sadece host için anlamlı; lobiye geri döner) ──
+    $('btnCancel').addEventListener('click', async () => {
+        if (!currentLobby) return;
+        if (pollTimer) clearInterval(pollTimer);
+        await window.electron.lobby.cancelChampSelect(currentLobby.name);
+        localStorage.setItem('currentLobby', JSON.stringify(currentLobby));
+        window.electron.navigate('lobby-room.html');
+    });
+
+    // ── Tüm oyuncular kilitliyse oyunu başlat (her oyuncu KENDİ makinesinde tetikler) ──
+    async function maybeLaunchGame(lobby) {
+        if (launchTriggered) return;
+        const players = lobby.players || [];
+        if (players.length === 0) return;
+        const allLocked = players.every(p => p.locked === true);
+        if (!allLocked) return;
+
+        launchTriggered = true;
+        if (pollTimer) clearInterval(pollTimer);
+        $('statusText').textContent = 'Herkes hazır! Oyun başlatılıyor...';
+
+        const myPlayer = players.find(p => p.name === currentUser.summonerName);
+        const myChampion = myPlayer ? myPlayer.champion : selectedChampion;
+
+        const result = await window.electron.game.launch(
+            lobby.name, currentUser.summonerName, { champion: myChampion }
+        );
+
+        if (result && result.success) {
+            window.electron.navigate('home.html');
+        } else {
+            alert('Oyun başlatılamadı:\n' + (result ? result.message : 'Bilinmeyen bir hata oluştu.'));
+            // Başarısız olursa tekrar deneyebilsin diye launch kilidini aç
+            launchTriggered = false;
+            startPolling();
+        }
+    }
+
+    // ── POLLING: diğer oyuncuların kilit durumunu ve iptal/kapanmayı izle ──
+    // Çoklu makinede her oyuncu ayrı pencere çalıştırdığından, main.js'in
+    // broadcastLobbyUpdate'i sadece o anki makineye ulaşır. Bu yüzden ortak
+    // MongoDB'ye periyodik sorgu asıl senkronizasyon kaynağıdır.
+    function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(async () => {
+            if (!currentLobby || launchTriggered) return;
+            const result = await window.electron.lobby.getOne(currentLobby.name);
+
+            if (!result.success) {
+                clearInterval(pollTimer);
+                if (result.closed) {
+                    localStorage.removeItem('currentLobby');
+                    window.electron.navigate('lobby-screen.html');
+                }
+                return;
+            }
+
+            const fresh = result.lobby;
+
+            // Host champselect'i iptal ettiyse (status tekrar Waiting oldu) lobiye dön.
+            if (fresh.status === 'Waiting') {
+                clearInterval(pollTimer);
+                localStorage.setItem('currentLobby', JSON.stringify(fresh));
+                window.electron.navigate('lobby-room.html');
+                return;
+            }
+
+            currentLobby = fresh;
+            localStorage.setItem('currentLobby', JSON.stringify(currentLobby));
+            renderRoster(currentLobby);
+            maybeLaunchGame(currentLobby);
+        }, 2000);
+    }
+
+    // ── INIT ──
+    function init() {
+        try { currentUser  = JSON.parse(localStorage.getItem('user')); } catch(e) {}
+        try { currentLobby = JSON.parse(localStorage.getItem('currentLobby')); } catch(e) {}
+
+        if (!currentUser || !currentLobby) {
+            alert('Lobi verisi bulunamadı!');
+            window.electron.navigate('lobby-screen.html');
+            return;
+        }
+
+        // Sadece host iptal edebilir; diğerlerine buton görünmesin.
+        if (currentLobby.host !== currentUser.summonerName) {
+            $('btnCancel').style.display = 'none';
+        }
+
+        renderRoster(currentLobby);
+        startPolling();
+    }
+
+    init();
+</script>
+</body>
+</html>

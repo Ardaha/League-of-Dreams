@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>PvP.net Lobby Room</title>
+    <style>
+        @font-face { font-family: "FRQITC01"; src: url("assets/fonts/FRQITC01.ttf") format("truetype"); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100vh; background: #010610; color: #cdbe91;
+            font-family: Tahoma, Arial, sans-serif; overflow: hidden;
+            font-size: 12px; user-select: none; display: flex; flex-direction: column;
+        }
+
+        /* ── TOP BAR ── */
+        .top-border {
+            height: 26px; background: url("assets/border.png") repeat-x center, linear-gradient(#1f2836,#101722);
+            border-bottom: 1px solid #3c4b62; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 5px 0 10px; font-size: 11px; color: #6a7e9b; flex-shrink: 0; -webkit-app-region: drag;
+        }
+        .window-controls { display: flex; gap: 12px; -webkit-app-region: no-drag; }
+        .win-btn { background: none; border: none; cursor: pointer; color: #d4ac5c; font-family: monospace; font-size: 16px; font-weight: bold; }
+        .win-btn:hover { color: #ffe400; text-shadow: 0 0 5px rgba(255,228,0,0.5); }
+
+        /* ── HEADER ── */
+        .header {
+            height: 72px; background: linear-gradient(to bottom, #162235, #070c14); border-bottom: 2px solid #000;
+            box-shadow: inset 0 1px rgba(255,255,255,.1), 0 4px 10px rgba(0,0,0,0.8);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0;
+        }
+        .room-info h2 { color: #e1d1a1; font-size: 20px; font-family: "FRQITC01", serif; letter-spacing: 1px; }
+        .room-info p  { color: #5b82a6; font-size: 11px; margin-top: 4px; }
+
+        /* ── LoL BUTTONS ── */
+        .lol-btn {
+            padding: 7px 18px; background: linear-gradient(to bottom, #1e3a5f, #0c1e35);
+            border: 1px solid #3a6590; border-bottom: 2px solid #c8aa6e;
+            color: #c8aa6e; font-size: 12px; font-weight: bold;
+            font-family: Tahoma, Arial, sans-serif; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.5px; transition: filter .15s;
+        }
+        .lol-btn:hover  { filter: brightness(1.25); }
+        .lol-btn:active { filter: brightness(0.9); }
+        .lol-btn.danger { background: linear-gradient(to bottom, #4a1313, #220707); border-color: #822222; border-bottom-color: #e03030; color: #f0a0a0; }
+        .lol-btn.start  { background: linear-gradient(to bottom, #1a4220, #0a2110); border-color: #2d6e35; border-bottom-color: #46c846; color: #7fd87f; }
+        .lol-btn.switch { background: linear-gradient(to bottom, #1f2e40, #0f1828); border-color: #2d4a6a; border-bottom-color: #82b9f7; color: #b0cfe8; }
+        .lol-btn.sm { padding: 3px 8px; font-size: 10px; width: auto; display: inline-block; }
+        .lol-btn.accept { background: linear-gradient(to bottom, #1a4220, #0a2110); border-color: #2d6e35; border-bottom-color: #46c846; color: #7fd87f; }
+        .lol-btn.reject { background: linear-gradient(to bottom, #421a1a, #210a0a); border-color: #6e2d2d; border-bottom-color: #c84646; color: #d87f7f; }
+
+        /* ── MAIN LAYOUT ── */
+        .main-body {
+            flex: 1; display: flex; min-height: 0; background: #020710;
+        }
+
+        /* ── TEAMS AREA ── */
+        .teams-area {
+            flex: 1; display: flex; justify-content: center; align-items: stretch;
+            gap: 20px; padding: 16px 16px 16px 16px;
+        }
+
+        .team-panel {
+            flex: 1; max-width: 360px; background: linear-gradient(to bottom, #09111c, #050a12);
+            border: 1px solid #1c2e46; box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column;
+        }
+        .team-header { padding: 10px; font-weight: bold; text-align: center; font-size: 14px; letter-spacing: 1px; }
+        .blue-team   .team-header { background: linear-gradient(to bottom, #11365c, #0a1f38); color: #82b9f7; border-bottom: 1px solid #1c4b82; }
+        .purple-team .team-header { background: linear-gradient(to bottom, #4a1c5c, #2a0e36); color: #d682f7; border-bottom: 1px solid #71248c; }
+        .player-list { list-style: none; padding: 8px; flex: 1; }
+        .player-slot {
+            padding: 9px 10px; border-bottom: 1px solid #111c2b;
+            color: #2a3e54; font-size: 13px; height: 40px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .player-slot.filled { color: #ddd; font-weight: bold; background: rgba(255,255,255,0.04); }
+        .crown { color: #c8aa6e; font-size: 13px; }
+
+        /* ── CENTER CONTROLS ── */
+        .center-controls {
+            width: 150px; display: flex; flex-direction: column;
+            justify-content: center; gap: 14px; flex-shrink: 0;
+        }
+
+        /* ── SIDEBAR (Arkadaşlar) ── */
+        .sidebar {
+            width: 220px; background: linear-gradient(to bottom, #0b131f, #050910);
+            border-left: 1px solid #1c2e46; display: flex; flex-direction: column; flex-shrink: 0;
+        }
+        .sidebar-title {
+            padding: 7px 10px; font-size: 11px; color: #7a9bbc;
+            text-transform: uppercase; letter-spacing: 1px;
+            background: linear-gradient(to bottom, #142235, #0b1420);
+            border-bottom: 1px solid #1c2e46; flex-shrink: 0;
+        }
+        .friend-list { flex: 1; overflow-y: auto; min-height: 0; }
+        .friend-item {
+            padding: 8px 12px; border-bottom: 1px solid #0f1926;
+            color: #a2b3c7; display: flex; justify-content: space-between; align-items: center;
+        }
+        .friend-item .fname { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .friend-item .fstatus { font-size: 10px; flex-shrink: 0; margin-left: 4px; }
+        .req-row { padding: 7px 10px; border-bottom: 1px solid #0f1926; }
+        .req-name { color: #c8aa6e; font-size: 11px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .req-btns { display: flex; gap: 4px; }
+        .friend-empty { padding: 16px; text-align: center; color: #2a3f5a; font-size: 11px; }
+
+        /* Arkadaş ekle alanı */
+        .friend-add-area { padding: 8px; background: #070d14; border-top: 1px solid #1c2e46; flex-shrink: 0; }
+        .friend-add-area input {
+            width: 100%; padding: 5px 8px; margin-bottom: 5px;
+            background: #03060a; border: 1px solid #2a3f5c;
+            color: #c8aa6e; font-size: 11px; outline: none; font-family: Tahoma, Arial, sans-serif;
+        }
+        .friend-add-area input::placeholder { color: #3a5070; }
+        .friend-add-area input:focus { border-color: #c8aa6e; }
+
+        /* ── BOTTOM ── */
+        .bottom-border { height: 24px; background: url("assets/border_bottom.png") repeat-x center, linear-gradient(to bottom, #0f1722, #070b10); border-top: 1px solid #233144; flex-shrink: 0; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1c324d; }
+        ::-webkit-scrollbar-track { background: #050a12; }
+    </style>
+</head>
+<body>
+    <div class="top-border">
+        <span>League of Legends 1.64.12_08_06_19_20</span>
+        <div class="window-controls">
+            <button class="win-btn" id="btnMin">−</button>
+            <button class="win-btn" id="btnClose">X</button>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="room-info">
+            <h2 id="displayRoomName">Yükleniyor...</h2>
+            <p id="displayMapName">Custom Game</p>
+        </div>
+        <div style="display:flex;gap:10px">
+            <button class="lol-btn start" id="btnStartGame">▶ Start Game</button>
+            <button class="lol-btn danger" id="btnQuitLobby">⬅ Quit</button>
+        </div>
+    </header>
+
+    <div class="main-body">
+        <!-- Takımlar -->
+        <div class="teams-area">
+            <div class="team-panel blue-team">
+                <div class="team-header">Team 1 — Blue</div>
+                <ul class="player-list" id="blueTeamList">
+                    <li class="player-slot"></li><li class="player-slot"></li>
+                    <li class="player-slot"></li><li class="player-slot"></li>
+                    <li class="player-slot"></li>
+                </ul>
+            </div>
+
+            <div class="center-controls">
+                <button class="lol-btn switch" id="btnSwitchTeam">⇄ Switch<br>Team</button>
+            </div>
+
+            <div class="team-panel purple-team">
+                <div class="team-header">Team 2 — Purple</div>
+                <ul class="player-list" id="purpleTeamList">
+                    <li class="player-slot"></li><li class="player-slot"></li>
+                    <li class="player-slot"></li><li class="player-slot"></li>
+                    <li class="player-slot"></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Sağ Sidebar: Arkadaş Listesi -->
+        <div class="sidebar">
+            <div class="sidebar-title">Arkadaş İstekleri</div>
+            <div id="friendRequestList"></div>
+
+            <div class="sidebar-title">Arkadaşlar</div>
+            <div class="friend-list" id="friendList">
+                <div class="friend-empty">Yükleniyor...</div>
+            </div>
+
+            <div class="friend-add-area">
+                <input type="text" id="friendNameInput" placeholder="Sihirdar Adı Gir...">
+                <button class="lol-btn" style="width:100%;padding:5px 0;" id="btnAddFriend">+ Arkadaş Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-border"></div>
+
+<script src="scripts/socket-manager.js"></script>
+<script>
+    const $ = id => document.getElementById(id);
+    const mapNames = { 1: "Summoner's Rift", 4: "Twisted Treeline", 30: "Howling Abyss", 8: "Crystal Scar" };
+
+    let currentUser = null;
+    let currentLobby = null;
+    let pollTimer = null;
+
+    // ── Lobiden güvenli çıkış ──
+    // Tek bir IPC invoke ile hem DB'den sil hem navigate et — async race condition yok
+    async function quitToLobbyList() {
+        if (pollTimer) clearInterval(pollTimer);
+        const lobbyName = currentLobby ? currentLobby.name : null;
+        const summonerName = currentUser ? currentUser.summonerName : null;
+        localStorage.removeItem('currentLobby');
+        await window.electron.lobbyLeaveAndNavigate(lobbyName, summonerName, 'lobby-screen.html');
+    }
+
+    async function quitAndClose() {
+        if (pollTimer) clearInterval(pollTimer);
+        if (currentLobby && currentUser) {
+            try {
+                await window.electron.lobby.leave(currentLobby.name, currentUser.summonerName);
+            } catch(e) {}
+        }
+        localStorage.removeItem('currentLobby');
+        window.electron.window.close();
+    }
+
+    // ── Pencere kontrolleri ──
+    $('btnMin').addEventListener('click', () => window.electron.window.minimize());
+    $('btnClose').addEventListener('click', () => quitAndClose());
+
+    // ── Lobi'den Çıkış butonu ──
+    $('btnQuitLobby').addEventListener('click', async () => {
+        if (!currentLobby || !currentUser) return;
+        if (pollTimer) clearInterval(pollTimer);
+        await window.electron.lobbyLeaveAndNavigate(currentLobby.name, currentUser.summonerName, 'lobby-screen.html');
+    });
+
+    // ── Takım değiştir: kalıcı, DB'ye yazılır ve lobideki herkese yansır ──
+    $('btnSwitchTeam').addEventListener('click', async () => {
+        if (!currentLobby || !currentUser) return;
+        $('btnSwitchTeam').disabled = true;
+        const result = await window.electron.lobby.switchTeam(currentLobby.name, currentUser.summonerName);
+        $('btnSwitchTeam').disabled = false;
+        if (result.success) {
+            currentLobby = result.lobby;
+            localStorage.setItem('currentLobby', JSON.stringify(currentLobby));
+            renderTeams();
+        } else {
+            alert('Hata: ' + result.message);
+        }
+    });
+
+$('btnStartGame').addEventListener('click', async () => {
+        if (!currentLobby || !currentUser) return;
+        
+        if (currentLobby.host !== currentUser.summonerName) {
+            return alert('Sadece oda kurucusu oyunu başlatabilir!');
+        }
+
+        $('btnStartGame').disabled = true;
+        $('btnStartGame').textContent = 'Başlatılıyor...';
+
+        const result = await window.electron.lobby.startGame(currentLobby.name, currentUser.summonerName);
+        
+        if (!result.success) {
+            alert('Hata: ' + result.message);
+            $('btnStartGame').disabled = false;
+            $('btnStartGame').textContent = '▶ Start Game';
+        } else {
+            // ── BAŞARILIYSA EKRANI DEĞİŞTİR ──
+            if (pollTimer) clearInterval(pollTimer);
+            localStorage.setItem('currentLobby', JSON.stringify(result.lobby));
+            window.electron.navigate('champselect.html');
+        }
+    });
+	
+// ── main.js'ten gelen sinyalleri doğrudan dinle ──
+    window.electron.socket.onEvent((event, data) => {
+        // Host oyunu başlattığında odadaki diğer oyuncuları ChampSelect'e çeker
+        if (event === 'champselect:start') {
+            if (pollTimer) clearInterval(pollTimer);
+            localStorage.setItem('currentLobby', JSON.stringify(data));
+            window.electron.navigate('champselect.html');
+            return;
+        }
+
+        // Lobi odasında bir şey değişti (oyuncu katıldı/ayrıldı/takım değişti) —
+        // herkesin ekranı canlı güncellensin.
+        if (event === 'lobby:room:update') {
+            if (!currentLobby || data.name !== currentLobby.name) return;
+            currentLobby = data;
+            localStorage.setItem('currentLobby', JSON.stringify(currentLobby));
+            renderTeams();
+            return;
+        }
+
+        // Lobi kapandıysa (boş kaldı) lobi listesine geri dön.
+        if (event === 'lobby:room:closed') {
+            if (!currentLobby || data.lobbyId !== currentLobby.name) return;
+            if (pollTimer) clearInterval(pollTimer);
+            localStorage.removeItem('currentLobby');
+            window.electron.navigate('lobby-screen.html');
+            return;
+        }
+
+        // Arkadaşlık isteği gelirse arayüzü günceller
+        if (event === 'friend:request_received') {
+            loadFriendData();
+        }
+    });
+
+    // ── Takımları render et: gerçek lobi verisindeki players[].team kullanılır ──
+    function renderTeams() {
+        const blueSlots   = [...document.querySelectorAll('#blueTeamList .player-slot')];
+        const purpleSlots = [...document.querySelectorAll('#purpleTeamList .player-slot')];
+        blueSlots.forEach(s   => { s.innerHTML = ''; s.classList.remove('filled'); });
+        purpleSlots.forEach(s => { s.innerHTML = ''; s.classList.remove('filled'); });
+
+        if (!currentUser || !currentLobby) return;
+
+        const players = currentLobby.players || [];
+        let blueIdx = 0, purpleIdx = 0;
+
+        players.forEach(p => {
+            const isHost = currentLobby.host === p.name;
+            const label = `${isHost ? '<span class="crown">♛</span>' : ''} ${p.name}`;
+            const team = p.team === 'PURPLE' ? 'PURPLE' : 'BLUE';
+
+            if (team === 'BLUE' && blueIdx < blueSlots.length) {
+                blueSlots[blueIdx].innerHTML = label;
+                blueSlots[blueIdx].classList.add('filled');
+                blueIdx++;
+            } else if (team === 'PURPLE' && purpleIdx < purpleSlots.length) {
+                purpleSlots[purpleIdx].innerHTML = label;
+                purpleSlots[purpleIdx].classList.add('filled');
+                purpleIdx++;
+            }
+        });
+    }
+
+    // ── Arkadaş verisi yükle ──
+    async function loadFriendData() {
+        if (!currentUser) return;
+        const friends = await window.electron.friend.getList(currentUser.username);
+        const reqResult = await window.electron.friend.getRequests(currentUser.username);
+        const requests = reqResult.success ? reqResult.requests : [];
+        renderFriendUI(friends, requests);
+    }
+
+    function renderFriendUI(friends, requests) {
+        const reqEl  = $('friendRequestList');
+        const listEl = $('friendList');
+        reqEl.innerHTML  = '';
+        listEl.innerHTML = '';
+
+        if (requests.length === 0) {
+            reqEl.innerHTML = '';
+        }
+        requests.forEach(req => {
+            const div = document.createElement('div');
+            div.className = 'req-row';
+            div.innerHTML = `
+                <div class="req-name">↩ ${req.from}</div>
+                <div class="req-btns">
+                    <button class="lol-btn sm accept" onclick="acceptRequest('${req.from}')">✓</button>
+                    <button class="lol-btn sm reject" onclick="rejectRequest('${req.from}')">✕</button>
+                </div>`;
+            reqEl.appendChild(div);
+        });
+
+        if (friends.length === 0) {
+            listEl.innerHTML = '<div class="friend-empty">Henüz arkadaşın yok.</div>';
+            return;
+        }
+        friends.forEach(f => {
+            const isOnline = f.online === true;
+            const div = document.createElement('div');
+            div.className = 'friend-item';
+            div.innerHTML = `
+                <span class="fname">${f.summonerName || f.name || f}</span>
+                <span class="fstatus" style="color:${isOnline ? '#46c846' : '#556e8b'}">${isOnline ? '●' : '○'}</span>`;
+            listEl.appendChild(div);
+        });
+    }
+
+    async function acceptRequest(requesterName) {
+        const result = await window.electron.friend.accept(currentUser.username, requesterName);
+        if (result.success) loadFriendData();
+        else alert('Hata: ' + result.message);
+    }
+
+    async function rejectRequest(requesterName) {
+        const result = await window.electron.friend.reject(currentUser.username, requesterName);
+        if (result.success) loadFriendData();
+        else alert('Hata: ' + result.message);
+    }
+
+    $('btnAddFriend').addEventListener('click', async () => {
+        const name = $('friendNameInput').value.trim();
+        if (!name) return;
+        const result = await window.electron.friend.add(currentUser.username, name);
+        if (result.success) { alert('İstek gönderildi!'); $('friendNameInput').value = ''; }
+        else alert(result.message);
+    });
+
+    // ── SocketManager: arkadaşlık isteği gelince güncelle ──
+    if (typeof SocketManager !== 'undefined') {
+        SocketManager.on('friend:request_received', () => loadFriendData());
+    }
+
+    // ── INIT ──
+    function init() {
+        try { currentUser  = JSON.parse(localStorage.getItem('user')); }  catch(e) {}
+        try { currentLobby = JSON.parse(localStorage.getItem('currentLobby')); } catch(e) {}
+
+        if (!currentUser || !currentLobby) {
+            alert('Lobi verisi bulunamadı!');
+            window.electron.navigate('lobby-screen.html');
+            return;
+        }
+
+        // Aktif lobiyi main process'e bildir: pencere beklenmedik kapanırsa
+        // (X, Alt+F4, crash) main process bu bilgiyle DB temizliği yapar.
+        window.electron.lobby.setActive(currentLobby.name, currentUser.summonerName);
+
+        $('displayRoomName').textContent = currentLobby.name;
+        $('displayMapName').textContent  = mapNames[currentLobby.mapId] || 'Custom Game';
+
+        renderTeams();
+        loadFriendData();
+        startPolling();
+    }
+
+    // ── POLLING (asıl senkronizasyon kaynağı, çoklu makine) ──
+    // Her oyuncu kendi bilgisayarında ayrı bir pencere çalıştırdığı için
+    // main.js'in socket:event broadcast'i sadece o anki pencereye gider,
+    // diğer makinelere ulaşmaz. Bu yüzden ortak MongoDB'ye 2 sn'de bir
+    // sorgu atıp (a) oyuncu listesini güncel tutuyoruz, (b) host
+    // "Start Game" dediğinde (status -> ChampSelect) herkesin otomatik
+    // champselect ekranına geçmesini sağlıyoruz.
+    function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(async () => {
+            if (!currentLobby) return;
+            const result = await window.electron.lobby.getOne(currentLobby.name);
+
+            if (!result.success) {
+                // Lobi artık DB'de yok (kapandı) — listeye geri dön.
+                if (result.closed) {
+                    clearInterval(pollTimer);
+                    localStorage.removeItem('currentLobby');
+                    window.electron.navigate('lobby-screen.html');
+                }
+                return;
+            }
+
+            const fresh = result.lobby;
+
+            // Host "Start Game" dedi (status ChampSelect oldu) — herkes geçer.
+            if (fresh.status === 'ChampSelect') {
+                clearInterval(pollTimer);
+                localStorage.setItem('currentLobby', JSON.stringify(fresh));
+                window.electron.navigate('champselect.html');
+                return;
+            }
+
+            currentLobby = fresh;
+            localStorage.setItem('currentLobby', JSON.stringify(currentLobby));
+            renderTeams();
+        }, 2000);
+    }
+
+    init();
+</script>
+</body>
+</html>
